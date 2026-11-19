@@ -14,7 +14,7 @@ const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY?.trim()
 declare global {
   interface Window {
     turnstile?: {
-      render: (element: HTMLElement, options: { sitekey: string; callback: (token: string) => void; 'expired-callback': () => void; 'error-callback': () => void }) => string
+      render: (element: HTMLElement, options: { sitekey: string; action?: string; callback: (token: string) => void; 'expired-callback': () => void; 'error-callback': () => void }) => string
       reset: (widgetId?: string) => void
     }
   }
@@ -39,6 +39,7 @@ export function RegisterPage() {
       if (!turnstileRef.current || !window.turnstile || turnstileWidgetId.current !== null) return
       turnstileWidgetId.current = window.turnstile.render(turnstileRef.current, {
         sitekey: turnstileSiteKey,
+        action: 'register',
         callback: setCaptchaToken,
         'expired-callback': () => setCaptchaToken(''),
         'error-callback': () => setCaptchaToken(''),

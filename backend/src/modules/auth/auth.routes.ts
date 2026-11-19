@@ -36,8 +36,11 @@ async function verifyCaptcha(token: string | undefined) {
   if (!token) return false
   const form = new URLSearchParams({ secret: env.TURNSTILE_SECRET_KEY, response: token })
   const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form })
-  const data = await response.json() as { success?: boolean }
-  return Boolean(data.success)
+  const data = await response.json() as { success?: boolean; action?: string; hostname?: string }
+  if (data.success !== true) return false
+  if (data.action !== 'register') return false
+  const allowedHosts = new Set([new URL(env.FRONTEND_URL).hostname])
+  return Boolean(data.hostname && allowedHosts.has(data.hostname))
 }
 
 authRouter.post('/register', async (req, res, next) => {
