@@ -9,13 +9,13 @@ import { apiFetch } from '@/lib/api'
 import { setAuthSession, type AuthUser } from '@/lib/auth'
 
 type AuthResponse = { accessToken: string; refreshToken: string; user: AuthUser }
-const recaptchaSiteKey = import.meta.env.VITE_RECAPTCHA_SITE_KEY?.trim()
+const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY?.trim()
 
 declare global {
   interface Window {
-    grecaptcha?: {
-      render: (element: HTMLElement, options: { sitekey: string; callback: (token: string) => void; 'expired-callback': () => void }) => number
-      reset: (widgetId?: number) => void
+    turnstile?: {
+      render: (element: HTMLElement, options: { sitekey: string; callback: (token: string) => void; 'expired-callback': () => void; 'error-callback': () => void }) => string
+      reset: (widgetId?: string) => void
     }
   }
 }
@@ -29,31 +29,35 @@ export function RegisterPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [googleLoading, setGoogleLoading] = useState(false)
-  const recaptchaRef = useRef<HTMLDivElement | null>(null)
-  const recaptchaWidgetId = useRef<number | null>(null)
+  const turnstileRef = useRef<HTMLDivElement | null>(null)
+  const turnstileWidgetId = useRef<string | null>(null)
 
   useEffect(() => {
-    if (!recaptchaSiteKey) return
-    const scriptId = 'google-recaptcha-script'
+    if (!turnstileSiteKey) return
+    const scriptId = 'cloudflare-turnstile-script'
     const renderCaptcha = () => {
-      if (!recaptchaRef.current || !window.grecaptcha || recaptchaWidgetId.current !== null) return
-      recaptchaWidgetId.current = window.grecaptcha.render(recaptchaRef.current, {
-        sitekey: recaptchaSiteKey,
+      if (!turnstileRef.current || !window.turnstile || turnstileWidgetId.current !== null) return
+      turnstileWidgetId.current = window.turnstile.render(turnstileRef.current, {
+        sitekey: turnstileSiteKey,
         callback: setCaptchaToken,
         'expired-callback': () => setCaptchaToken(''),
+        'error-callback': () => setCaptchaToken(''),
       })
     }
 
-    if (!document.getElementById(scriptId)) {
+    const existing = document.getElementById(scriptId)
+    if (!existing) {
       const script = document.createElement('script')
       script.id = scriptId
-      script.src = 'https://www.google.com/recaptcha/api.js?render=explicit'
+      script.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit'
       script.async = true
       script.defer = true
       script.onload = renderCaptcha
       document.body.appendChild(script)
-    } else {
+    } else if (window.turnstile) {
       renderCaptcha()
+    } else {
+      existing.addEventListener('load', renderCaptcha)
     }
   }, [])
 
@@ -73,7 +77,7 @@ export function RegisterPage() {
     event.preventDefault()
     setLoading(true)
     setError('')
-    if (recaptchaSiteKey && !captchaToken) {
+    if (turnstileSiteKey && !captchaToken) {
       setError('Please complete the captcha.')
       setLoading(false)
       return
@@ -84,7 +88,7 @@ export function RegisterPage() {
       navigate('/all-files')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Register failed')
-      if (recaptchaWidgetId.current !== null) window.grecaptcha?.reset(recaptchaWidgetId.current)
+      if (turnstileWidgetId.current !== null) window.turnstile?.reset(turnstileWidgetId.current)
       setCaptchaToken('')
     } finally {
       setLoading(false)
@@ -102,7 +106,7 @@ export function RegisterPage() {
           <label className="grid gap-2 text-sm font-semibold">Name<Input value={name} onChange={(e) => setName(e.target.value)} required /></label>
           <label className="grid gap-2 text-sm font-semibold">Email<Input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
           <label className="grid gap-2 text-sm font-semibold">Password<Input type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
-          {recaptchaSiteKey ? <div className="min-h-[78px] overflow-hidden rounded-xl bg-slate-50 p-2"><div ref={recaptchaRef} /></div> : null}
+          {turnstileSiteKey ? <div className="min-h-[78px] overflow-hidden rounded-xl bg-slate-50 p-2"><div ref={turnstileRef} /></div> : null}
           {error ? <p className="rounded-xl bg-red-50 p-3 text-sm text-red-600">{error}</p> : null}
           <Button disabled={loading}>{loading ? 'Creating...' : 'Create Account'}</Button>
         </form>

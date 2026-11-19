@@ -32,10 +32,10 @@ async function createSession(userId: string, req: AuthRequest) {
 }
 
 async function verifyCaptcha(token: string | undefined) {
-  if (!env.RECAPTCHA_SECRET_KEY) return true
+  if (!env.TURNSTILE_SECRET_KEY) return true
   if (!token) return false
-  const form = new URLSearchParams({ secret: env.RECAPTCHA_SECRET_KEY, response: token })
-  const response = await fetch('https://www.google.com/recaptcha/api/siteverify', { method: 'POST', body: form })
+  const form = new URLSearchParams({ secret: env.TURNSTILE_SECRET_KEY, response: token })
+  const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body: form })
   const data = await response.json() as { success?: boolean }
   return Boolean(data.success)
 }
