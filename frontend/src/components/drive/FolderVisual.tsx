@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Folder } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { FolderItem } from '@/data/drive-data'
@@ -76,9 +77,15 @@ export function iconUrlWithColor(iconUrl: string, color: string) {
 export function FolderVisual({ folder, className, iconClassName }: { folder: Pick<FolderItem, 'color' | 'iconUrl'>; className?: string; iconClassName?: string }) {
   const color = normalizeFolderColor(folder.color)
   const iconUrl = folder.iconUrl || defaultFolderIconUrl
+  const [failed, setFailed] = useState(false)
+  useEffect(() => setFailed(false), [iconUrl, color])
   return (
     <span className={cn('inline-flex items-center justify-center', className)}>
-      {iconUrl ? <img src={iconUrlWithColor(iconUrl, color)} alt="" className={cn('h-full w-full object-contain', iconClassName)} /> : <Folder className={cn('h-full w-full fill-current stroke-current', iconClassName)} style={{ color }} />}
+      {iconUrl && !failed ? (
+        <img src={iconUrlWithColor(iconUrl, color)} alt="" loading="lazy" onError={() => setFailed(true)} className={cn('h-full w-full object-contain', iconClassName)} />
+      ) : (
+        <Folder className={cn('h-full w-full fill-current stroke-current', iconClassName)} style={{ color }} />
+      )}
     </span>
   )
 }
