@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react'
-import { Folder } from 'lucide-react'
+import { Folder, FolderOpen, Folders, Files, FileText, FileImage, FileVideo, FileMusic, FileCode, FileArchive, Briefcase, Archive, Cloud, CloudUpload, CloudDownload, HardDrive, Database, Server, Image, Images, Video, Film, Music, Headphones, Code, Terminal, Package, Box, BookOpen, Notebook, GraduationCap, Receipt, Wallet, ChartColumn, Calendar, Clock, Users, UserCheck, Share2, Lock, Shield, Star, Heart, Rocket, Sparkles, type LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { FolderItem } from '@/data/drive-data'
 
@@ -74,18 +73,69 @@ export function iconUrlWithColor(iconUrl: string, color: string) {
   return `${iconUrl}${separator}color=${encodeURIComponent(color)}`
 }
 
+const lucideIconBySlug: Record<string, LucideIcon> = {
+  'folder': Folder,
+  'folder-open': FolderOpen,
+  'folders': Folders,
+  'files': Files,
+  'file-text': FileText,
+  'file-image': FileImage,
+  'file-video': FileVideo,
+  'file-music': FileMusic,
+  'file-code': FileCode,
+  'file-archive': FileArchive,
+  'briefcase': Briefcase,
+  'archive': Archive,
+  'cloud': Cloud,
+  'cloud-upload': CloudUpload,
+  'cloud-download': CloudDownload,
+  'hard-drive': HardDrive,
+  'database': Database,
+  'server': Server,
+  'image': Image,
+  'images': Images,
+  'video': Video,
+  'film': Film,
+  'music': Music,
+  'headphones': Headphones,
+  'code': Code,
+  'terminal': Terminal,
+  'package': Package,
+  'box': Box,
+  'book-open': BookOpen,
+  'notebook': Notebook,
+  'graduation-cap': GraduationCap,
+  'receipt': Receipt,
+  'wallet': Wallet,
+  'chart-column': ChartColumn,
+  'calendar': Calendar,
+  'clock': Clock,
+  'users': Users,
+  'user-check': UserCheck,
+  'share2': Share2,
+  'lock': Lock,
+  'shield': Shield,
+  'star': Star,
+  'heart': Heart,
+  'rocket': Rocket,
+  'sparkles': Sparkles,
+}
+
+function iconSlug(iconUrl: string) {
+  const match = /lucide:([a-z0-9-]+)(?:\.svg)?/i.exec(iconUrl)
+  return match?.[1]?.toLowerCase() ?? 'folder'
+}
+
+export function FolderIcon({ iconUrl, color, className, style }: { iconUrl?: string | null; color: string; className?: string; style?: React.CSSProperties }) {
+  const Icon = lucideIconBySlug[iconSlug(iconUrl || defaultFolderIconUrl)] ?? Folder
+  return <Icon className={className} style={{ color, ...style }} strokeWidth={2} />
+}
+
 export function FolderVisual({ folder, className, iconClassName }: { folder: Pick<FolderItem, 'color' | 'iconUrl'>; className?: string; iconClassName?: string }) {
   const color = normalizeFolderColor(folder.color)
-  const iconUrl = folder.iconUrl || defaultFolderIconUrl
-  const [failed, setFailed] = useState(false)
-  useEffect(() => setFailed(false), [iconUrl, color])
   return (
     <span className={cn('inline-flex items-center justify-center', className)}>
-      {iconUrl && !failed ? (
-        <img src={iconUrlWithColor(iconUrl, color)} alt="" loading="lazy" onError={() => setFailed(true)} className={cn('h-full w-full object-contain', iconClassName)} />
-      ) : (
-        <Folder className={cn('h-full w-full fill-current stroke-current', iconClassName)} style={{ color }} />
-      )}
+      <FolderIcon iconUrl={folder.iconUrl} color={color} className={cn('h-full w-full', iconClassName)} />
     </span>
   )
 }
